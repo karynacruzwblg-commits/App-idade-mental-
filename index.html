@@ -58,12 +58,8 @@
     <div id="root"></div>
     
     <!-- 
-      [CORREÇÃO ADICIONADA]
-      Esta linha é essencial para carregar e executar o aplicativo React.
-      - type="module": Informa ao navegador que estamos usando módulos JavaScript ES6, que é o padrão do Vite.
-      - src="/index.tsx": Aponta para o arquivo de entrada principal do seu aplicativo, onde o React é renderizado no <div id="root">.
-      Sem isso, a página HTML é carregada, mas o código React nunca é executado, resultando em uma página em branco.
+      O Vite injetará automaticamente a tag de script necessária aqui durante o processo de build.
+      Não é necessário adicionar <script type="module" src="/index.tsx"></script> manualmente.
     -->
-    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
