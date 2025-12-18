@@ -1,12 +1,12 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { ResultCategory } from '../types';
 
-export const generateAnalysis = async (category: ResultCategory): Promise<string> => {
-  // FIX: Get API key from process.env.API_KEY per coding guidelines. This resolves the TypeScript error.
-  const apiKey = process.env.API_KEY;
+// Fix: Per Gemini API guidelines, API key must be from process.env.API_KEY. This also resolves the TypeScript error.
+const apiKey = process.env.API_KEY;
 
+export const generateAnalysis = async (category: ResultCategory): Promise<string> => {
   if (!apiKey) {
+    // Fix: Updated error message to reflect the use of API_KEY.
     console.error("API_KEY não encontrada. Verifique suas variáveis de ambiente.");
     return "A análise personalizada não está disponível no momento. A configuração da API está ausente.";
   }
