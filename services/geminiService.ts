@@ -1,11 +1,11 @@
 import { GoogleGenAI } from "@google/genai";
 import { ResultCategory } from '../types';
 
-// FIX: Switched to process.env.API_KEY and simplified initialization as per guidelines.
-// The API key must be obtained exclusively from the environment variable `process.env.API_KEY`.
+// FIX: Switched to process.env.API_KEY and direct initialization as per Gemini API guidelines to resolve the TypeScript error with `import.meta.env`.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const generateAnalysis = async (category: ResultCategory): Promise<string> => {
+  // FIX: Removed the explicit API key check. The guidelines state to assume the key is always available.
   const prompt = `
     Baseado em um resultado de quiz psicológico que indica uma "Idade Mental ${category}", 
     forneça uma análise curta (2 parágrafos), encorajadora e perspicaz para o usuário.
