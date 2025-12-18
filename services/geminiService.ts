@@ -1,11 +1,18 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { ResultCategory } from '../types';
 
-// FIX: Switched to process.env.API_KEY and direct initialization as per Gemini API guidelines to resolve the TypeScript error with `import.meta.env`.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 export const generateAnalysis = async (category: ResultCategory): Promise<string> => {
-  // FIX: Removed the explicit API key check. The guidelines state to assume the key is always available.
+  // FIX: Get API key from process.env.API_KEY per coding guidelines. This resolves the TypeScript error.
+  const apiKey = process.env.API_KEY;
+
+  if (!apiKey) {
+    console.error("API_KEY não encontrada. Verifique suas variáveis de ambiente.");
+    return "A análise personalizada não está disponível no momento. A configuração da API está ausente.";
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+  
   const prompt = `
     Baseado em um resultado de quiz psicológico que indica uma "Idade Mental ${category}", 
     forneça uma análise curta (2 parágrafos), encorajadora e perspicaz para o usuário.
@@ -21,7 +28,7 @@ export const generateAnalysis = async (category: ResultCategory): Promise<string
     });
     return response.text || "Não foi possível gerar a análise. Tente novamente.";
   } catch (error) {
-    console.error("Error calling Gemini API:", error);
-    return "Ocorreu um erro ao gerar sua análise personalizada. Por favor, verifique sua conexão ou a configuração da API.";
+    console.error("Erro ao chamar a API Gemini:", error);
+    return "Ocorreu um erro ao gerar sua análise personalizada. Por favor, verifique se sua chave da API é válida e se a configuração está correta.";
   }
 };
