@@ -1,23 +1,11 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { ResultCategory } from '../types';
 
-// IMPORTANT: Do not expose the API key in the frontend in a real production app.
-// This is done for demonstration purposes only.
-// In a real app, this logic should be on a server.
-const API_KEY = process.env.API_KEY;
-
-if (!API_KEY) {
-  console.warn("API_KEY environment variable not set. Gemini API calls will fail.");
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+// FIX: Switched to process.env.API_KEY and simplified initialization as per guidelines.
+// The API key must be obtained exclusively from the environment variable `process.env.API_KEY`.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const generateAnalysis = async (category: ResultCategory): Promise<string> => {
-    if (!API_KEY) {
-        return "A análise personalizada não está disponível no momento. A chave da API não foi configurada.";
-    }
-
   const prompt = `
     Baseado em um resultado de quiz psicológico que indica uma "Idade Mental ${category}", 
     forneça uma análise curta (2 parágrafos), encorajadora e perspicaz para o usuário.
