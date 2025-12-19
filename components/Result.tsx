@@ -2,29 +2,62 @@
 import React, { useState, useEffect } from 'react';
 import { ResultCategory } from '../types';
 import { resultDescriptions } from '../constants';
-import { generateAnalysis } from '../services/geminiService';
+import { GoogleGenAI } from "@google/genai";
 
-interface ResultProps {
+// Movido para cá para melhor encapsulamento e para usar o streaming
+const generateAnalysisStream = async (
+  category: ResultCategory,
+  onStream: (chunk: string) => void
+) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const prompt = `
+    Baseado em um resultado de quiz psicológico que indica uma "Idade Mental ${category}", 
+    forneça uma análise curta (2 parágrafos), encorajadora e perspicaz para o usuário.
+    Use um tom positivo e reflexivo. A resposta deve ser em Português do Brasil.
+    Não inicie com "Com base no resultado...". Comece diretamente com a análise.
+    Não se apresente como uma IA. Fale diretamente com o usuário.
+    `;
+
+  try {
+    const response = await ai.models.generateContentStream({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+    });
+    
+    for await (const chunk of response) {
+      if (chunk.text) {
+        onStream(chunk.text);
+      }
+    }
+  } catch (error) {
+    console.error("Erro ao chamar a API Gemini:", error);
+    onStream("Ocorreu um erro ao gerar sua análise personalizada. Por favor, tente novamente mais tarde.");
+  }
+};
+
+
+const Result: React.FC<{
   score: number;
   category: ResultCategory | null;
   onRestart: () => void;
-}
-
-const Result: React.FC<ResultProps> = ({ score, category, onRestart }) => {
+}> = ({ score, category, onRestart }) => {
   const [analysis, setAnalysis] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const fetchAnalysis = async () => {
-      if (category) {
-        setIsLoading(true);
-        const generatedText = await generateAnalysis(category);
-        setAnalysis(generatedText);
+    if (category) {
+      setIsLoading(true);
+      setAnalysis(''); // Limpa a análise anterior
+      
+      const streamAnalysis = async () => {
+        await generateAnalysisStream(category, (chunk) => {
+          setAnalysis((prev) => prev + chunk);
+        });
         setIsLoading(false);
-      }
-    };
-    
-    fetchAnalysis();
+      };
+
+      streamAnalysis();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category]);
 
@@ -59,14 +92,12 @@ const Result: React.FC<ResultProps> = ({ score, category, onRestart }) => {
         
         <div>
           <h2 className="text-lg font-bold text-secondary mb-2 border-b border-gray-200 pb-2">Análise Personalizada</h2>
-          {isLoading ? (
-            <div className="flex items-center space-x-2 text-gray-600">
-              <div className="w-4 h-4 border-2 border-t-transparent border-primary rounded-full animate-spin"></div>
-              <span>Gerando seu insight...</span>
-            </div>
-          ) : (
-            <p className="text-gray-700 whitespace-pre-wrap">{analysis}</p>
-          )}
+          <div className="text-gray-700 whitespace-pre-wrap min-h-[5rem]">
+            {analysis}
+            {isLoading && (
+              <span className="inline-block w-2 h-4 bg-primary animate-pulse ml-1" aria-label="digitando..."></span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -74,6 +105,7 @@ const Result: React.FC<ResultProps> = ({ score, category, onRestart }) => {
         <button
           onClick={onRestart}
           className="w-full md:w-auto bg-gray-200 text-gray-800 font-bold py-3 px-8 rounded-full hover:bg-gray-300 transition-all duration-200"
+          disabled={isLoading}
         >
           Refazer o teste
         </button>
@@ -87,4 +119,5 @@ const Result: React.FC<ResultProps> = ({ score, category, onRestart }) => {
   );
 };
 
-export default Result;
+// Adicionado React.memo para evitar re-renderizações desnecessárias do componente de resultado.
+export default React.memo(Result);
