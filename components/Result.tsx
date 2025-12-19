@@ -7,9 +7,24 @@ import { GoogleGenAI } from "@google/genai";
 // Movido para cá para melhor encapsulamento e para usar o streaming
 const generateAnalysisStream = async (
   category: ResultCategory,
-  onStream: (chunk: string) => void
+  onStream: (chunk: string) => void,
+  onComplete: () => void
 ) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // Pega a API Key do ambiente. Usamos VITE_GEMINI_API_KEY por convenção do Vite.
+  const apiKey = process.env.VITE_GEMINI_API_KEY;
+
+  // VERIFICAÇÃO CRÍTICA: Se a chave não existir, mostra uma mensagem de erro clara.
+  if (!apiKey || apiKey === "undefined") {
+    console.error("ERRO: VITE_GEMINI_API_KEY não está configurada.");
+    onStream(
+      "Erro de configuração: A chave da API do Google não foi encontrada. \n\n" +
+      "Se você é o desenvolvedor, adicione a variável de ambiente 'VITE_GEMINI_API_KEY' nas configurações do seu projeto na Vercel."
+    );
+    onComplete();
+    return;
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   const prompt = `
     Baseado em um resultado de quiz psicológico que indica uma "Idade Mental ${category}", 
     forneça uma análise curta (2 parágrafos), encorajadora e perspicaz para o usuário.
@@ -31,7 +46,9 @@ const generateAnalysisStream = async (
     }
   } catch (error) {
     console.error("Erro ao chamar a API Gemini:", error);
-    onStream("Ocorreu um erro ao gerar sua análise personalizada. Por favor, tente novamente mais tarde.");
+    onStream("Ocorreu um erro ao gerar sua análise personalizada. A chave da API pode ser inválida ou a API está temporariamente indisponível.");
+  } finally {
+    onComplete();
   }
 };
 
@@ -50,10 +67,15 @@ const Result: React.FC<{
       setAnalysis(''); // Limpa a análise anterior
       
       const streamAnalysis = async () => {
-        await generateAnalysisStream(category, (chunk) => {
-          setAnalysis((prev) => prev + chunk);
-        });
-        setIsLoading(false);
+        await generateAnalysisStream(
+          category, 
+          (chunk) => {
+            setAnalysis((prev) => prev + chunk);
+          },
+          () => {
+            setIsLoading(false);
+          }
+        );
       };
 
       streamAnalysis();
